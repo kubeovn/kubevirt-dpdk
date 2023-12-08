@@ -282,3 +282,13 @@ func GenerateKubeVirtGroupVersionKind(obj runtime.Object) (runtime.Object, error
 
 	return objCopy, nil
 }
+
+// Check if a VMI spec requests vhostuser interface
+func IsVhostuserVmi(vmi *v1.VirtualMachineInstance) bool {
+	for _, iface := range vmi.Spec.Domain.Devices.Interfaces {
+		if iface.Vhostuser != nil {
+			return true
+		}
+	}
+	return false
+}

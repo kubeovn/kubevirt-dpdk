@@ -17163,6 +17163,9 @@
      "tag": {
       "description": "If specified, the virtual network interface address and its tag will be provided to the guest via config drive",
       "type": "string"
+     },
+     "vhostuser": {
+      "$ref": "#/definitions/v1.InterfaceVhostuser"
      }
     }
    },
@@ -17188,6 +17191,10 @@
    },
    "v1.InterfaceSlirp": {
     "description": "InterfaceSlirp connects to a given network using QEMU user networking mode.",
+    "type": "object"
+   },
+   "v1.InterfaceVhostuser": {
+    "description": "InterfaceVhostuser connects to a given network via a linux unix sock.",
     "type": "object"
    },
    "v1.KSMConfiguration": {

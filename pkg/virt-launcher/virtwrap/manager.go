@@ -39,6 +39,8 @@ import (
 	"sync"
 	"time"
 
+	"kubevirt.io/kubevirt/pkg/network/vhostuser"
+
 	"k8s.io/utils/pointer"
 
 	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/device/hostdevice/generic"
@@ -937,6 +939,12 @@ func (l *LibvirtDomainManager) generateConverterContext(vmi *v1.VirtualMachineIn
 			return nil, err
 		}
 		c.GPUHostDevices = gpuHostDevices
+
+		dpdkInterfaceInfo, err := vhostuser.GetDpdkInterfaceInfo(vmi)
+		if err != nil {
+			return nil, err
+		}
+		c.DpdkNetInterfaceInfo = dpdkInterfaceInfo
 	}
 
 	return c, nil

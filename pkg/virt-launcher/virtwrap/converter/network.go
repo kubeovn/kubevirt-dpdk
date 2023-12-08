@@ -24,10 +24,13 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path"
 	"strings"
 
 	v1 "kubevirt.io/api/core/v1"
 	"kubevirt.io/client-go/log"
+
+	"kubevirt.io/kubevirt/pkg/network/vhostuser"
 
 	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/converter/vcpu"
 
@@ -130,6 +133,23 @@ func CreateDomainInterfaces(vmi *v1.VirtualMachineInstance, domain *api.Domain, 
 			}
 		} else if iface.Passt != nil {
 			domain.Spec.Devices.Emulator = "/usr/bin/qrap"
+		} else if iface.Vhostuser != nil {
+			domainIface.Type = "vhostuser"
+			networkInfo := networks[iface.Name]
+			nadSlice := strings.Split(networkInfo.Multus.NetworkName, "/")
+			nadName := networkInfo.Multus.NetworkName
+			if len(nadSlice) == 2 {
+				nadName = nadSlice[1]
+			}
+			vhostUserNeedInfo := c.DpdkNetInterfaceInfo[nadName]
+			domainIface.Source = api.InterfaceSource{
+				Type: "unix",
+				Path: path.Join(vhostuser.VhostuserSocketDirMountPath, vhostUserNeedInfo.InterfaceName),
+				Mode: "server",
+			}
+			domainIface.MAC = &api.MAC{
+				MAC: vhostUserNeedInfo.Mac,
+			}
 		}
 
 		if c.UseLaunchSecurity {

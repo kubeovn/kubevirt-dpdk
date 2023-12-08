@@ -36,6 +36,8 @@ import (
 	"strings"
 	"syscall"
 
+	"kubevirt.io/kubevirt/pkg/network/vhostuser"
+
 	"kubevirt.io/kubevirt/pkg/storage/reservation"
 	"kubevirt.io/kubevirt/pkg/virt-controller/watch/topology"
 
@@ -119,6 +121,7 @@ type ConverterContext struct {
 	ExpandDisksEnabled    bool
 	UseLaunchSecurity     bool
 	FreePageReporting     bool
+	DpdkNetInterfaceInfo  map[string]*vhostuser.VhostUserNeedInfo
 }
 
 func contains(volumes []string, name string) bool {
@@ -1432,6 +1435,35 @@ func Convert_v1_VirtualMachineInstance_To_api_Domain(vmi *v1.VirtualMachineInsta
 					Unit:   "KiB",
 				},
 			},
+		}
+	}
+
+	if util.IsVhostuserVmi(vmi) {
+		// Shared memory required for vhostuser interfaces
+		if vmi.Spec.Domain.Memory == nil || vmi.Spec.Domain.Memory.Hugepages == nil {
+			return fmt.Errorf("Hugepage is required for vhostuser interface to add NUMA cells %v", vmi.Spec.Domain.Memory)
+		}
+		if domain.Spec.Memory.Value == 0 {
+			return fmt.Errorf("Valid memory is required for vhostuser interface to add NUMA cells")
+		}
+
+		domain.Spec.CPU.NUMA = &api.NUMA{}
+		sockets := domain.Spec.CPU.Topology.Sockets
+		cellMemory := domain.Spec.Memory.Value / uint64(sockets)
+		nCPUsPerCell := domain.Spec.VCPU.CPUs / sockets
+		var idx uint32
+		for idx = 0; idx < sockets; idx++ {
+			start := idx * nCPUsPerCell
+			end := start + nCPUsPerCell - 1
+			cellCPUs := strconv.Itoa(int(start)) + "-" + strconv.Itoa(int(end))
+			cell := api.NUMACell{
+				ID:           strconv.Itoa(int(idx)),
+				CPUs:         cellCPUs,
+				Memory:       cellMemory,
+				Unit:         domain.Spec.Memory.Unit,
+				MemoryAccess: "shared",
+			}
+			domain.Spec.CPU.NUMA.Cells = append(domain.Spec.CPU.NUMA.Cells, cell)
 		}
 	}
 

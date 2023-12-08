@@ -68,8 +68,10 @@ func (vim *virtIOInterfaceManager) hotplugVirtioInterface(vmi *v1.VirtualMachine
 	for _, network := range networksToHotplugWhoseInterfacesAreNotInTheDomain(vmi, indexedDomainInterfaces(currentDomain)) {
 		log.Log.Infof("will hot plug %s", network.Name)
 
-		if err := vim.configurator.SetupPodNetworkPhase2(updatedDomain, []v1.Network{network}); err != nil {
-			return err
+		if !isDpdkInterfaceHotplug(vmi.Spec.Domain.Devices.Interfaces, network.Name) {
+			if err := vim.configurator.SetupPodNetworkPhase2(updatedDomain, []v1.Network{network}); err != nil {
+				return err
+			}
 		}
 
 		relevantIface := lookupDomainInterfaceByName(updatedDomain.Spec.Devices.Interfaces, network.Name)
@@ -227,4 +229,15 @@ func newInterfacePlaceholder(index int, modelType string) api.Interface {
 			Managed: "no",
 		},
 	}
+}
+
+func isDpdkInterfaceHotplug(vmiInterfaces []v1.Interface, networkName string) bool {
+	for _, vmiInterface := range vmiInterfaces {
+		if vmiInterface.Name == networkName {
+			if vmiInterface.Vhostuser != nil {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -797,6 +797,8 @@ type InterfaceSource struct {
 	Bridge  string   `xml:"bridge,attr,omitempty"`
 	Mode    string   `xml:"mode,attr,omitempty"`
 	Address *Address `xml:"address,omitempty"`
+	Type    string   `xml:"type,attr,omitempty"`
+	Path    string   `xml:"path,attr,omitempty"`
 }
 
 type Model struct {

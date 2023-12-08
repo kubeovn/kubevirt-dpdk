@@ -155,3 +155,22 @@ func FilterStatusInterfacesByNames(interfaces []v1.VirtualMachineInstanceNetwork
 
 	return filtered
 }
+
+func FilterVhostuserInterfaces(ifaces []v1.Interface) []v1.Interface {
+	var vhostuserIfaces []v1.Interface
+	for _, iface := range ifaces {
+		if iface.Vhostuser != nil && iface.State != v1.InterfaceStateAbsent {
+			vhostuserIfaces = append(vhostuserIfaces, iface)
+		}
+	}
+	return vhostuserIfaces
+}
+
+func VhostuserInterfaceExist(ifaces []v1.Interface) bool {
+	for _, iface := range ifaces {
+		if iface.Vhostuser != nil && iface.State != v1.InterfaceStateAbsent {
+			return true
+		}
+	}
+	return false
+}

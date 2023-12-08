@@ -345,6 +345,7 @@ func (t *templateService) renderLaunchManifest(vmi *v1.VirtualMachineInstance, i
 	if err != nil {
 		return nil, err
 	}
+
 	resourceRenderer, err := t.newResourceRenderer(vmi, networkToResourceMap)
 	if err != nil {
 		return nil, err
@@ -713,6 +714,15 @@ func (t *templateService) newVolumeRenderer(vmi *v1.VirtualMachineInstance, name
 
 	if util.IsVMIVirtiofsEnabled(vmi) {
 		volumeOpts = append(volumeOpts, withVirioFS())
+	}
+
+	if vmispec.VhostuserInterfaceExist(vmi.Spec.Domain.Devices.Interfaces) {
+		if vmi.Spec.Domain.Memory == nil && vmi.Spec.Domain.Memory.Hugepages == nil {
+			return nil, fmt.Errorf("Hugepages is required for vhostuser interface")
+		}
+		volumeOpts = append(volumeOpts, withVhostuserSockVolumes())
+		volumeOpts = append(volumeOpts, withVhostuserOvsVolumes())
+		volumeOpts = append(volumeOpts, withVhostuserPodNetworkStatusMaps())
 	}
 
 	volumeRenderer, err := NewVolumeRenderer(

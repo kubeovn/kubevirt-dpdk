@@ -17,6 +17,7 @@ import (
 	"kubevirt.io/kubevirt/pkg/hooks"
 	hostdisk "kubevirt.io/kubevirt/pkg/host-disk"
 	"kubevirt.io/kubevirt/pkg/network/sriov"
+	"kubevirt.io/kubevirt/pkg/network/vhostuser"
 	"kubevirt.io/kubevirt/pkg/storage/types"
 	"kubevirt.io/kubevirt/pkg/util"
 	"kubevirt.io/kubevirt/pkg/virtiofs"
@@ -707,4 +708,39 @@ func (vr *VolumeRenderer) handleDownwardMetrics(volume v1.Volume) {
 		Name:      volume.Name,
 		MountPath: config.DownwardMetricDisksDir,
 	})
+}
+
+func withVhostuserSockVolumes() VolumeRendererOption {
+	return func(renderer *VolumeRenderer) error {
+		// volume name will be used by kube-ovn cni to place the vhostuser socket file`
+		renderer.podVolumeMounts = append(renderer.podVolumeMounts, mountPath(vhostuser.VhostuserSocketDirVolumeName, vhostuser.VhostuserSocketDirMountPath))
+		renderer.podVolumes = append(renderer.podVolumes, emptyDirVolume(vhostuser.VhostuserSocketDirVolumeName))
+		return nil
+	}
+}
+
+func withVhostuserOvsVolumes() VolumeRendererOption {
+	return func(renderer *VolumeRenderer) error {
+		// Libvirt uses ovs-vsctl commands to get interface stats
+		renderer.podVolumeMounts = append(renderer.podVolumeMounts, mountPath(vhostuser.OvsRunDirVolumeName, vhostuser.OvsRunDirMountPath))
+		renderer.podVolumes = append(renderer.podVolumes, k8sv1.Volume{
+			Name: vhostuser.OvsRunDirVolumeName,
+			VolumeSource: k8sv1.VolumeSource{
+				HostPath: &k8sv1.HostPathVolumeSource{
+					Path: vhostuser.OvsRunDirMountPath,
+				}},
+		})
+		return nil
+	}
+}
+
+func withVhostuserPodNetworkStatusMaps() VolumeRendererOption {
+	return func(renderer *VolumeRenderer) error {
+		renderer.podVolumeMounts = append(renderer.podVolumeMounts, mountPath(vhostuser.NetworkStatusMapAnnotationVolumeName, vhostuser.NetworkStatusMapMountPath))
+		renderer.podVolumes = append(renderer.podVolumes,
+			downwardAPIDirVolume(
+				vhostuser.NetworkStatusMapAnnotationVolumeName, vhostuser.NetworkStatusMapVolumePath, fmt.Sprintf("metadata.annotations['%s']", vhostuser.AnnotKeyNetworkStatus)),
+		)
+		return nil
+	}
 }

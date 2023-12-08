@@ -40,10 +40,10 @@ func validateInterfaceStateValue(field *k8sfield.Path, spec *v1.VirtualMachineIn
 				Field:   field.Child("domain", "devices", "interfaces").Index(idx).Child("state").String(),
 			})
 		}
-		if iface.State == v1.InterfaceStateAbsent && iface.Bridge == nil {
+		if iface.State == v1.InterfaceStateAbsent && iface.Bridge == nil && iface.Vhostuser == nil {
 			causes = append(causes, metav1.StatusCause{
 				Type:    metav1.CauseTypeFieldValueInvalid,
-				Message: fmt.Sprintf("%q interface's state %q is supported only for bridge binding", iface.Name, iface.State),
+				Message: fmt.Sprintf("%q interface's state %q is supported only for bridge,vhostuser binding", iface.Name, iface.State),
 				Field:   field.Child("domain", "devices", "interfaces").Index(idx).Child("state").String(),
 			})
 		}

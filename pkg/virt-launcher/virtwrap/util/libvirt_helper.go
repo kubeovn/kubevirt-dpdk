@@ -453,6 +453,11 @@ func configureQemuConf(qemuFilename string) (err error) {
 		}
 	}
 
+	_, err = qemuConf.WriteString("group = \"hugetlbfs\"\n")
+	if err != nil {
+		err = nil
+	}
+
 	return nil
 }
 

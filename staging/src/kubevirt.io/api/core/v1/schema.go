@@ -1264,6 +1264,7 @@ type InterfaceBindingMethod struct {
 	SRIOV      *InterfaceSRIOV      `json:"sriov,omitempty"`
 	Macvtap    *InterfaceMacvtap    `json:"macvtap,omitempty"`
 	Passt      *InterfacePasst      `json:"passt,omitempty"`
+	Vhostuser  *InterfaceVhostuser  `json:"vhostuser,omitempty"`
 }
 
 // InterfaceBridge connects to a given network via a linux bridge.
@@ -1283,6 +1284,9 @@ type InterfaceMacvtap struct{}
 
 // InterfacePasst connects to a given network.
 type InterfacePasst struct{}
+
+// InterfaceVhostuser connects to a given network via a linux unix sock.
+type InterfaceVhostuser struct{}
 
 // Port represents a port to expose from the virtual machine.
 // Default protocol TCP.
