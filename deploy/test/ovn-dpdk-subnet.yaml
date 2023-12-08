@@ -1,0 +1,13 @@
+apiVersion: kubeovn.io/v1
+kind: Subnet
+metadata:
+  name: ovn-dpdk
+spec:
+  protocol: IPv4
+  provider: ovn-dpdk.default.ovn
+  cidrBlock: 172.18.0.0/16
+  gateway: 172.18.0.1
+  natOutgoing: true
+  enableDHCP: true
+  excludeIps:
+    - 172.18.0.0..172.18.0.10

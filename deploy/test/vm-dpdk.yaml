@@ -1,0 +1,58 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: vm-dpdk
+  namespace: default
+spec:
+  running: true
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      architecture: amd64
+      domain:
+        memory:
+          hugepages:
+            pageSize: "1Gi"
+          guest: 2Gi
+        cpu:
+          cores: 2
+          model: host-model
+        devices:
+          networkInterfaceMultiqueue: true
+          disks:
+            - disk:
+                bus: virtio
+              name: containerdisk
+            - disk:
+                bus: virtio
+              name: cloud-init
+          interfaces:
+            - vhostuser: {}
+              name: net1
+              model: virtio
+        machine:
+          type: q35
+      networks:
+        - multus:
+            networkName: ovn-dpdk
+          name: net1
+      nodeSelector:
+        kubernetes.io/hostname: <dpdk-node>
+      volumes:
+        - containerDisk:
+            image: registry.cn-hangzhou.aliyuncs.com/wujixin/centos:qcow2
+          name: containerdisk
+        - cloudInitConfigDrive:
+            userData: |-
+              #cloud-config
+              ssh_authorized_keys:
+              system_info:
+                default_user:
+                  name: root
+                  plain_text_passwd: 123456
+                  lock_passwd: false
+              runcmd:
+                - sed -i 's/^PasswordAuthentication\b.*/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+                - systemctl restart sshd
+          name: cloud-init
